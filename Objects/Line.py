@@ -3,7 +3,8 @@ import math
 
 
 class Line:
-    def __init__(self, points):
+    def __init__(self, points, file_name):
+        self.file_name = file_name
         self.vector = Objects.Vector.Vector(x_start=float(points[1]),
                                             x_end=float(points[2]),
                                             y_start=float(points[3]),
