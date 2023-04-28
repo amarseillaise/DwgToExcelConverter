@@ -1,12 +1,93 @@
 import logging
-from Objects.Vector import Vector
+from Objects.Vector import Vector, is_equal_coordinate
 from Objects.Vector import is_in
-from RegularExpressions import detect_form_via_re
+from regularExpressions import is_it_form_of_page
+
+
+def detect_pages(dataset):
+    lines: list = dataset[0]
+    content: list = dataset[1]
+    result: list = []
+    pre_result: list = []
+    iterations_count: int = 0
+
+    try:
+        poped_line = lines.pop(0)
+    except IndexError:
+        raise Exception("Failed to detect lines")
+
+    while len(lines) != 0:
+        for l in range(len(lines)):
+            current_line = lines[l]
+
+            if poped_line.vertical and current_line.horizontal:  # Case poped line is vertical
+
+                if is_equal_coordinate(poped_line.vector.get_start_coordinate(),
+                                       current_line.vector.get_start_coordinate(), 1e-4) or \
+                        is_equal_coordinate(poped_line.vector.get_end_coordinate(),
+                                            current_line.vector.get_start_coordinate(), 1e-4):
+                    poped_line.border_side = "Left"
+
+                elif is_equal_coordinate(poped_line.vector.get_start_coordinate(),
+                                         current_line.vector.get_end_coordinate(), 1e-4) or \
+                        is_equal_coordinate(poped_line.vector.get_end_coordinate(),
+                                            current_line.vector.get_end_coordinate(), 1e-4):
+                    poped_line.border_side = "Right"
+
+
+            elif poped_line.horizontal and current_line.vertical:  # Case poped line is horizontal
+
+                if is_equal_coordinate(poped_line.vector.get_start_coordinate(),
+                                       current_line.vector.get_start_coordinate(), 1e-4) or \
+                        is_equal_coordinate(poped_line.vector.get_end_coordinate(),
+                                            current_line.vector.get_start_coordinate(), 1e-4):
+                    poped_line.border_side = "Down"
+
+                elif is_equal_coordinate(poped_line.vector.get_start_coordinate(),
+                                         current_line.vector.get_end_coordinate(), 1e-4) or \
+                        is_equal_coordinate(poped_line.vector.get_end_coordinate(),
+                                            current_line.vector.get_end_coordinate(), 1e-4):
+                    poped_line.border_side = "Up"
+
+            if poped_line.border_side is not None:
+                iterations_count = 0
+                pre_result.append(poped_line)
+                poped_line = lines.pop(l)
+                if len(pre_result) == 3:  # Case last line iteration
+                    matches_border_sides = pre_result[0].border_side, pre_result[1].border_side, pre_result[
+                        2].border_side
+                    if "Up" not in matches_border_sides:
+                        poped_line.border_side = "Up"
+                    elif "Down" not in matches_border_sides:
+                        poped_line.border_side = "Down"
+                    elif "Right" not in matches_border_sides:
+                        poped_line.border_side = "Right"
+                    elif "Left" not in matches_border_sides:
+                        poped_line.border_side = "Left"
+                    else:
+                        raise Exception(f"Failed to detect last line in file {poped_line.file_name}")
+                    pre_result.append(poped_line)
+                    if len(lines) != 0:
+                        poped_line = lines.pop(0)
+                    result.append(Page(pre_result, content, pre_result[0].file_name))
+                    pre_result.clear()
+                break
+
+            iterations_count += 1
+            if iterations_count == 3:
+                logging.error(f"Incorrect Line in coordinate:\n"
+                              f"start point - ({poped_line.vector.x_start}; {poped_line.vector.y_start})\n"
+                              f"end point - ({poped_line.vector.x_end}; {poped_line.vector.y_end})\n"
+                              f"in file {poped_line.file_name}\n")
+                poped_line = lines.pop(0)
+                pre_result.clear()
+                break
+        return sorted(result, key=lambda i: i.page_number)
 
 
 class Page:  # I should make a child classes
     def __init__(self, lines, dataset, filename):
-        self.file_name = filename
+        self.file_name: str = filename
         self.up_border = None
         self.down_border = None
         self.left_border = None
@@ -92,7 +173,7 @@ class Page:  # I should make a child classes
             if is_in((self.up_border.vector.x_end - 150, self.up_border.vector.y_end - 6,
                       self.up_border.vector.x_end, self.up_border.vector.y_end),
                      (text.vector.x, text.vector.y)):
-                form_re = detect_form_via_re(text.text)
+                form_re = is_it_form_of_page(text.text)
                 if form_re is not None:
                     self.form = "".join(form_re.split(" "))
 
@@ -104,8 +185,10 @@ class Page:  # I should make a child classes
             self.form = -1
 
         if self.page_number == -1 and (self.kind == "Undefined" or self.form == -1):
-            raise Exception(f"Failed to resolve any headers at page on {self.vector.get_start_coordinate()};"
-                            f"{self.vector.get_end_coordinate()} in file {self.file_name}, page {self.page_number}")
+            raise Exception(f"Failed to resolve any headers at page on\n"
+                            f"{self.vector.get_start_coordinate()};\n"
+                            f"{self.vector.get_end_coordinate()}\n"
+                            f"in file {self.file_name}, page {self.page_number}")
 
         if self.kind.lower() == "тл" \
                 or (self.kind.lower() == "мк" and self.form == "2") \
@@ -116,16 +199,18 @@ class Page:  # I should make a child classes
                      or self.approver is None
                      or self.normalizator is None):
             self.__detect_main_info()
+            if self.file_name is None:
+                logging.warning(f"in file {self.file_name} found only ID of process flow")
 
             if self.name_tech is None:
-                raise Exception(f"Failed to match name and code of tech process on page {self.page_number} "
+                raise Exception(f"Failed match name and code of tech process on page {self.page_number} "
                                 f"in file {self.file_name}")
 
         self.__get_additional_info()
 
     def __detect_main_info(self):
-        temp_list_N_TC = []  # temp_list_N_TC list for handling of name and techname
-        temp_list_descr = []  # temp_list_N_TC list for handling description
+        temp_list_N_TC = []  # temp list for handling of name and techname
+        temp_list_descr = []  # temp list for handling description
         for text in self.content:
             if is_in((self.up_border.vector.x_start + 137, self.up_border.vector.y_end - 44,  # name and techname
                       self.up_border.vector.x_end - 5, self.up_border.vector.y_end - 32),
@@ -183,7 +268,6 @@ class Page:  # I should make a child classes
             self.name_tech = temp_list_N_TC[2]
         elif len(temp_list_N_TC) == 1:
             self.name_tech = temp_list_N_TC[0]
-            logging.warning(f"in file {self.file_name} found only ID of process flow")
 
     def __get_additional_info(self):
         for text in self.content:

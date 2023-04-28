@@ -1,6 +1,4 @@
 import math
-from decimal import *
-getcontext().prec = 10
 
 
 def is_equal_coordinate(this_coordinate, obj, accuracy):

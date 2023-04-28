@@ -1,24 +1,31 @@
-from fileReader import get_data
-from dataHandler import *
 import os
-from tkinter import filedialog
-from Objects.ProcessFlow import ProcessFlow
 import logging
+from tkinter import filedialog
+from dataIO import get_data
+from Objects.Page import detect_pages
+from Objects.ProcessFlow import ProcessFlow
+
 
 logging.basicConfig(level=logging.DEBUG, filename="log.log", format="%(asctime)s %(levelname)s %(message)s")
+logging.debug("######################START######################")
 
 
 def get_data_from_txt():
-    pre_result_dir = filedialog.askdirectory(title="Выберите папку с выгрузкой техпроцессов .txt")
-    pre_result_file_list = os.listdir(pre_result_dir)
+    while True:
+        pre_result_dir = filedialog.askdirectory(title="Выберите папку с выгрузкой техпроцессов .txt")
+        pre_result_file_list = os.listdir(pre_result_dir)
+        if pre_result_file_list:
+            break
 
     dataset_from_dwg_list = [get_data(x, pre_result_dir) for x in pre_result_file_list]
     pages_list = [detect_pages(x) for x in dataset_from_dwg_list]
+    if len(pages_list) < 1:
+        raise Exception("Failed resolve pages")
     return pages_list
 
 
 def get_process_flow(pages_list):
-    pf_list = []
+    pf_list: list = []
     for pages in pages_list:
         pf = None
         for page in pages:
@@ -32,9 +39,9 @@ def get_process_flow(pages_list):
                                  approver=page.approver,
                                  normalizator=page.normalizator,
                                  liter=page.liter)
-        if pf is None:
+        if not pf:
             raise Exception(f"MK page is not defined in file {pages[0].file_name}")
-        detect_operations(pf, pages)
-        detect_shifts(pf, pages)
+        pf.detect_operations(pages)
+        pf.detect_shifts(pages)
         pf_list.append(pf)
     return pf_list

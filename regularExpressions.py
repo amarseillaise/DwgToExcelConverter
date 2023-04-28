@@ -1,7 +1,7 @@
 import re
 
 
-def detect_form_via_re(string):
+def is_it_form_of_page(string):
     re_pattern_whole_string = r"(?:Форма|форма)[ ]+\d{1,2}(?:\w{1}|[ ]+\w{1}|\b)"  # r"(?:Форма|форма)\s+\d{1,2}(?:\w{1}|\s|\b)"
     re_pattern_of_number_of_form = r"\d{1,2}(?:\w{1}|[ ]+\w{1}|\b)"
     try:
