@@ -23,6 +23,23 @@ class Vector:
         self.start_point = start_point
         self.end_point = end_point
 
+    def get_x1(self):
+        return self.start_point[0]
+
+    def get_y1(self):
+        return self.start_point[1]
+
+    def get_x2(self):
+        return self.end_point[0]
+
+    def get_y2(self):
+        return self.end_point[1]
+
+    def get_start_coordinate(self):
+        return self.start_point[0], self.start_point[1]
+
+    def get_end_coordinate(self):
+        return self.end_point[0], self.end_point[1]
 
 class VectorLine(Vector):
     def __init__(self, start_point: tuple, end_point: tuple, delta_x: float, delta_y: float):
