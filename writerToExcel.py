@@ -44,7 +44,7 @@ def write_pf_to_excel(pf_list):
     # Insert MAIN (process flow) info in main sheet
     for pf in pf_list:
         if already_existing_in_excel.get(pf.marker) is not None:
-            already_existing_match[pf.pf.marker] = pf.file_name
+            already_existing_match[pf.pf.marker] = pf.__file_name
             continue
 
         pf_sheet.cell(row=act_row_pf_sheet, column=1).value = pf.name

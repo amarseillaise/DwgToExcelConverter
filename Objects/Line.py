@@ -3,28 +3,36 @@ import math
 
 
 class Line:
-    def __init__(self, points, file_name):
+    def __init__(self, points: list, file_name: str):
+        self.__border_side: str = ""
         self.file_name = file_name
-        self.vector = Objects.Vector.Vector(x_start=float(points[1]),
-                                            x_end=float(points[2]),
-                                            y_start=float(points[3]),
-                                            y_end=float(points[4]),
-                                            delta_x=float(points[5]),
-                                            delta_y=float(points[6]))
-        self.border_side = None
-        self.horizontal = False
-        self.vertical = False
+        self.vertical: bool
+        
+        self.vector = Objects.Vector.VectorLine(start_point=(float(points[1]), float(points[3])),
+                                                end_point=(float(points[2]), float(points[4])),
+                                                delta_x=float(points[5]),
+                                                delta_y=float(points[6]))
 
-        if math.isclose(self.vector.x_start, self.vector.x_end, rel_tol=1e-4):
+
+        if math.isclose(self.vector.start_point[0], self.vector.end_point[0], rel_tol=1e-4):
             self.vertical = True
             if self.vector.delta_y < 0:
-                temp = self.vector.y_start
-                self.vector.y_start = self.vector.y_end
-                self.vector.y_end = temp
+                temp = self.vector.start_point[1]
+                self.vector.start_point = (self.vector.start_point[0], self.vector.end_point[1])
+                self.vector.end_point = (self.vector.end_point[0], temp)
 
-        elif math.isclose(self.vector.y_start, self.vector.y_end, rel_tol=1e-4):
-            self.horizontal = True
+        elif math.isclose(self.vector.start_point[1], self.vector.end_point[1], rel_tol=1e-4):
+            self.vertical = False
             if self.vector.delta_x < 0:
-                temp = self.vector.x_start
-                self.vector.x_start = self.vector.x_end
-                self.vector.x_end = temp
+                temp = self.vector.start_point[0]
+                self.vector.start_point = (self.vector.end_point[0], self.vector.start_point[1])
+                self.vector.end_point = (temp, self.vector.end_point[1])
+        else:
+            raise Exception("Failed resolve kind of the line (vertical/horizontal)")
+
+    def get_border_side(self):
+        return self.__border_side
+
+
+    def set_border_side(self, value):
+        self.__border_side = value

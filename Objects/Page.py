@@ -1,136 +1,119 @@
 import logging
-from Objects.Vector import Vector, is_equal_coordinate
+from Objects.Line import Line
+from Objects.Vector import Vector, VectorPage, is_equal_coordinate
 from Objects.Vector import is_in
 from regularExpressions import is_it_form_of_page
 
 
-def detect_pages(dataset):
-    lines: list = dataset[0]
-    content: list = dataset[1]
-    result: list = []
-    pre_result: list = []
-    iterations_count: int = 0
+def detect_pages(dataset: list[{}, []]):
+    lines = list(dataset[0].values())
+    content = dataset[1]
+    result = []
+    iterations_count = 0
+    count_of_matched_lines = 0
+    matches_border_sides = {
+        "left": None,
+        "right": None,
+        "up": None,
+        "down": None,
+    }
 
     try:
-        poped_line = lines.pop(0)
+        poped_line: Line = lines.pop()
     except IndexError:
         raise Exception("Failed to detect lines")
 
     while len(lines) != 0:
         for l in range(len(lines)):
-            current_line = lines[l]
+            current_line: Line = lines[l]
 
-            if poped_line.vertical and current_line.horizontal:  # Case poped line is vertical
-
-                if is_equal_coordinate(poped_line.vector.get_start_coordinate(),
-                                       current_line.vector.get_start_coordinate(), 1e-4) or \
-                        is_equal_coordinate(poped_line.vector.get_end_coordinate(),
-                                            current_line.vector.get_start_coordinate(), 1e-4):
-                    poped_line.border_side = "Left"
-
-                elif is_equal_coordinate(poped_line.vector.get_start_coordinate(),
-                                         current_line.vector.get_end_coordinate(), 1e-4) or \
-                        is_equal_coordinate(poped_line.vector.get_end_coordinate(),
-                                            current_line.vector.get_end_coordinate(), 1e-4):
-                    poped_line.border_side = "Right"
-
-
-            elif poped_line.horizontal and current_line.vertical:  # Case poped line is horizontal
+            if poped_line.vertical and not current_line.vertical:  # Case poped line is vertical
 
                 if is_equal_coordinate(poped_line.vector.get_start_coordinate(),
                                        current_line.vector.get_start_coordinate(), 1e-4) or \
                         is_equal_coordinate(poped_line.vector.get_end_coordinate(),
                                             current_line.vector.get_start_coordinate(), 1e-4):
-                    poped_line.border_side = "Down"
+                    poped_line.set_border_side("left")
 
                 elif is_equal_coordinate(poped_line.vector.get_start_coordinate(),
                                          current_line.vector.get_end_coordinate(), 1e-4) or \
                         is_equal_coordinate(poped_line.vector.get_end_coordinate(),
                                             current_line.vector.get_end_coordinate(), 1e-4):
-                    poped_line.border_side = "Up"
+                    poped_line.set_border_side("right")
 
-            if poped_line.border_side is not None:
+
+            elif not poped_line.vertical and current_line.vertical:  # Case poped line is horizontal
+
+                if is_equal_coordinate(poped_line.vector.get_start_coordinate(),
+                                       current_line.vector.get_start_coordinate(), 1e-4) or \
+                        is_equal_coordinate(poped_line.vector.get_end_coordinate(),
+                                            current_line.vector.get_start_coordinate(), 1e-4):
+                    poped_line.set_border_side("down")
+
+
+                elif is_equal_coordinate(poped_line.vector.get_start_coordinate(),
+                                         current_line.vector.get_end_coordinate(), 1e-4) or \
+                        is_equal_coordinate(poped_line.vector.get_end_coordinate(),
+                                            current_line.vector.get_end_coordinate(), 1e-4):
+                    poped_line.set_border_side("up")
+
+            if poped_line.get_border_side():
                 iterations_count = 0
-                pre_result.append(poped_line)
+                matches_border_sides[poped_line.get_border_side()] = poped_line
+                count_of_matched_lines += 1
                 poped_line = lines.pop(l)
-                if len(pre_result) == 3:  # Case last line iteration
-                    matches_border_sides = pre_result[0].border_side, pre_result[1].border_side, pre_result[
-                        2].border_side
-                    if "Up" not in matches_border_sides:
-                        poped_line.border_side = "Up"
-                    elif "Down" not in matches_border_sides:
-                        poped_line.border_side = "Down"
-                    elif "Right" not in matches_border_sides:
-                        poped_line.border_side = "Right"
-                    elif "Left" not in matches_border_sides:
-                        poped_line.border_side = "Left"
-                    else:
-                        raise Exception(f"Failed to detect last line in file {poped_line.file_name}")
-                    pre_result.append(poped_line)
+                if count_of_matched_lines == 3:  # Case last line iteration
+                    [matches_border_sides.update({x: current_line}) for x in matches_border_sides.keys()
+                     if not matches_border_sides.get(x)]
                     if len(lines) != 0:
                         poped_line = lines.pop(0)
-                    result.append(Page(pre_result, content, pre_result[0].file_name))
-                    pre_result.clear()
+                    result.append(Page(matches_border_sides, content, poped_line.file_name))
+                    [matches_border_sides.update({x: None}) for x in matches_border_sides.keys()]  # reset values
+                    count_of_matched_lines = 0
                 break
 
-            iterations_count += 1
-            if iterations_count == 3:
-                logging.error(f"Incorrect Line in coordinate:\n"
-                              f"start point - ({poped_line.vector.x_start}; {poped_line.vector.y_start})\n"
-                              f"end point - ({poped_line.vector.x_end}; {poped_line.vector.y_end})\n"
-                              f"in file {poped_line.file_name}\n")
-                poped_line = lines.pop(0)
-                pre_result.clear()
-                break
-        return sorted(result, key=lambda i: i.page_number)
+        iterations_count += 1
+        if iterations_count == 3:
+            logging.error(f"Incorrect Line in coordinate:\n"
+                          f"start point - ({poped_line.vector.x_start}; {poped_line.vector.y_start})\n"
+                          f"end point - ({poped_line.vector.x_end}; {poped_line.vector.y_end})\n"
+                          f"in file {poped_line.file_name}\n")
+            poped_line = lines.pop(0)
+            [matches_border_sides.update({x: None}) for x in matches_border_sides.keys()]
+            count_of_matched_lines = 0
+    return sorted(result, key=lambda i: i.page_number)
 
 
 class Page:  # I should make a child classes
-    def __init__(self, lines, dataset, filename):
-        self.file_name: str = filename
-        self.up_border = None
-        self.down_border = None
-        self.left_border = None
-        self.right_border = None
-        self.vector = None
-        self.content = []
-        self.page_number = None
-        self.kind = None
-        self.additional_info = None
-        self.form = None
-        self.name = None
-        self.name_tech = None
-        self.liter = None
-        # humans МК
-        self.description = None
-        self.developer = None
-        self.checker = None
-        self.approver = None
-        self.normalizator = None
-        # operations OK
-        self.number_of_operation = None
-        self.IOT = None
-        self.name_of_operation = None
-        self.ammo = None
+    def __init__(self, lines: dict, dataset: list, filename: str):
 
         if len(lines) != 4:
             raise Exception(f"Incorrect count of borders in file {filename}")
 
-        for border in lines:
-            match border.border_side:
-                case "Up":
-                    self.up_border = border
-                case "Down":
-                    self.down_border = border
-                case "Left":
-                    self.left_border = border
-                case "Right":
-                    self.right_border = border
-
-        self.vector = Vector(x_start=self.down_border.vector.x_start,
-                             y_start=self.down_border.vector.y_start,
-                             x_end=self.up_border.vector.x_end,
-                             y_end=self.up_border.vector.y_end)
+        self.borders: dict = lines
+        self.vector = VectorPage(start_point=self.borders.get("down").vector.start_point,
+                                 end_point=self.borders.get("up").vector.end_point
+                                 )
+        self.file_name: str = filename
+        self.content: list = []
+        self.page_number: int
+        self.kind: str = ""
+        self.additional_info: str = ""
+        self.form: str = ""
+        self.name: str = ""
+        self.name_tech: str = ""
+        self.liter: str = ""
+        # humans МК
+        self.description: str = ""
+        self.developer: str = ""
+        self.checker: str = ""
+        self.approver: str = ""
+        self.normalizator: str = ""
+        # operations OK
+        self.number_of_operation: str = ""
+        self.IOT: str = ""
+        self.name_of_operation: str = ""
+        self.ammo: str = ""
 
         for obj in dataset:
             if is_in((self.vector.x_start, self.vector.y_start, self.vector.x_end, self.vector.y_end),
@@ -143,13 +126,15 @@ class Page:  # I should make a child classes
         for text in self.content:
 
             # Searching kind of page
-            if is_in((self.down_border.vector.x_start, self.down_border.vector.y_start,
+            if is_in((self.borders.get("down").vector.start_point, self.down_border.vector.y_start,
                       self.down_border.vector.x_start + 28, self.down_border.vector.y_start + 8.3),
                      (text.vector.x, text.vector.y)):
                 import re
-                if re.fullmatch("[оo][кk]", text.text.strip().lower()) is not None:  # it needs because technologists incorrect printing kind
+                if re.fullmatch("[оo][кk]",
+                                text.text.strip().lower()) is not None:  # it needs because technologists incorrect printing kind
                     self.kind = "ОК"
-                elif re.fullmatch("[мm][кk]", text.text.strip().lower()) is not None:  # it needs because technologists incorrect printing kind
+                elif re.fullmatch("[мm][кk]",
+                                  text.text.strip().lower()) is not None:  # it needs because technologists incorrect printing kind
                     self.kind = "МК"
                 else:
                     self.kind = text.text
