@@ -139,7 +139,7 @@ class Page:  # I should make a child classes
 
             # Searching number of page
             if is_in((self.borders.get("down").vector.get_x2() - 33, self.borders.get("down").vector.get_y1(),
-                      self.borders.get("down").vector.get_x2(), self.borders.get("down").vector.get_x1() + 8.3),
+                      self.borders.get("down").vector.get_x2(), self.borders.get("down").vector.get_y1() + 8.5),
                      (text.vector.get_x1(), text.vector.get_y1())):
                 try:
                     self.page_number = int(text.text)
@@ -240,7 +240,7 @@ class Page:  # I should make a child classes
         self.description = "".join(temp_list_descr)  # get the description
 
         # handling name and techname
-        temp_list_N_TC = sorted(temp_list_N_TC, key=lambda i: i.vector.x)
+        temp_list_N_TC = sorted(temp_list_N_TC, key=lambda i: i.vector.get_x1())
         temp_list_N_TC = [x.text for x in temp_list_N_TC]
         if len(temp_list_N_TC) > 3:  # if there are more than 3 text objects we can't resolve it
             raise Exception(f"Too much text in list {self.page_number} on upper headers in file {self.file_name}")

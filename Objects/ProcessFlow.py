@@ -5,7 +5,8 @@ from regularExpressions import is_it_new_item, is_it_number_of_field
 
 
 class ProcessFlow:
-    def __init__(self, file_name, marker, name, description, developer, checker, approver, normalizator, liter):
+    def __init__(self, file_name: str, marker: str, name: str, description: str, developer: str, checker: str,
+                 approver: str, normalizator: str, liter: str):
         self.file_name = file_name
         self.marker = marker
         self.name = name
@@ -36,10 +37,10 @@ class ProcessFlow:
                 for i in range(len(page.vector.fields_coordinate)):
                     temp_list = []
                     for text in page.content:
-                        if is_in(page.vector.fields_coordinate[i], text.vector.get_coordinate()) \
+                        if is_in(page.vector.fields_coordinate[i], text.vector.get_start_coordinate()) \
                                 and not is_it_number_of_field(text.text):
                             temp_list.append(text)
-                    temp_list = sorted(temp_list, key=lambda x: x.vector.x)
+                    temp_list = sorted(temp_list, key=lambda x: x.vector.get_x1())
                     if len(temp_list) > 0:
                         fields.append("".join(x.text + "  " for x in temp_list))
 
@@ -49,14 +50,14 @@ class ProcessFlow:
         for field in fields:
             if is_it_new_item(field, r"\s[0123]\d\d\s"):
                 # in case first element of list
-                if previous_field is None:
+                if not previous_field:
                     previous_field = field
                     continue
                 #
                 o = __split_operation_field(previous_field)
                 self.operations[o.number] = o
                 previous_field = field
-            elif previous_field is not None:
+            elif previous_field:
                 previous_field += " " + field
             else:
                 unresolved += field
@@ -67,7 +68,9 @@ class ProcessFlow:
         except TypeError:
             self.unresolved_text.append(UnresolvedText("Somewhere in MK", unresolved))
 
-    def detect_shifts(self, pages):  # Очень плохой код - спагетии. Переписать
+    def detect_shifts(self, pages):
+
+
         def __split_shift_field(string):
             s = re.search(r"(?:^|(?: |^)[оО])(?: +|^)\d{1,2}\.? ", string)
 
@@ -102,6 +105,42 @@ class ProcessFlow:
                 description = string[s.end():]
             return Shift(number.replace(".", "").replace("О", "").strip(), description.strip(), tools, percent)
 
+        def __fields_data_getter(unresolved=""):
+            previous_field = None
+            for field in fields:
+                if is_it_new_item(field, r"(?:^|(?: |^)[оО])(?: +|^)\d{1,2}\.? "):
+                    # in case first element of list
+                    if not previous_field:
+                        previous_field = field
+                        continue
+                    #
+                    s = __split_shift_field(previous_field)
+                    try:
+                        self.operations[previous_page.number_of_operation].shifts.append(s)
+                    except KeyError:
+                        self.operations[previous_page.number_of_operation] = Operation(
+                            (previous_page.number_of_operation, previous_page.name_of_operation, ""))
+                        logging.warning(
+                            f"In file {self.file_name} operation #{previous_page.number_of_operation} not found in MK")
+                        operation = self.operations[previous_page.number_of_operation]
+                        operation.IOT = previous_page.IOT
+                        operation.ammo = previous_page.ammo
+                        self.operations[previous_page.number_of_operation].shifts.append(s)
+                    previous_field = field
+                elif previous_field:
+                    previous_field += " " + field
+                else:
+                    unresolved += field
+
+            s = __split_shift_field(previous_field)
+            self.operations[previous_page.number_of_operation].shifts.append(s)  # in case final element of list
+
+            if unresolved:
+                self.unresolved_text.append(UnresolvedText(previous_page.number_of_operation, unresolved))
+
+            fields.clear()
+
+
         #  detect operations dataset in fields via vector's coordinate
         fields = []
         previous_page = pages[0]
@@ -112,39 +151,7 @@ class ProcessFlow:
 
                     #  find operations via regexp r"(?:^|О) +\d{1,2}\.? "
                     unresolved = ""
-                    previous_field = None
-                    for field in fields:
-                        if is_it_new_item(field, r"(?:^|(?: |^)[оО])(?: +|^)\d{1,2}\.? "):
-                            # in case first element of list
-                            if previous_field is None:
-                                previous_field = field
-                                continue
-                            #
-                            s = __split_shift_field(previous_field)
-                            try:
-                                self.operations[previous_page.number_of_operation].shifts.append(s)
-                            except KeyError:
-                                self.operations[previous_page.number_of_operation] = Operation(
-                                    (previous_page.number_of_operation, previous_page.name_of_operation, ""))
-                                logging.warning(
-                                    f"In file {self.file_name} operation #{previous_page.number_of_operation} not found in MK")
-                                operation = self.operations[previous_page.number_of_operation]
-                                operation.IOT = previous_page.IOT
-                                operation.ammo = previous_page.ammo
-                                self.operations[previous_page.number_of_operation].shifts.append(s)
-                            previous_field = field
-                        elif previous_field is not None:
-                            previous_field += " " + field
-                        else:
-                            unresolved += field
-
-                    s = __split_shift_field(previous_field)
-                    self.operations[previous_page.number_of_operation].shifts.append(s)  # in case final element of list
-
-                    if unresolved != "":
-                        self.unresolved_text.append(UnresolvedText(previous_page.number_of_operation, unresolved))
-
-                    fields.clear()
+                    __fields_data_getter()
 
                 # in case it's first page of operation we get headers
                 if page.form in ("1", "2"):
@@ -162,62 +169,31 @@ class ProcessFlow:
                 for i in range(len(page.vector.fields_coordinate)):
                     temp_list = []
                     for text in page.content:
-                        if is_in(page.vector.fields_coordinate[i], text.vector.get_coordinate()) \
+                        if is_in(page.vector.fields_coordinate[i], text.vector.get_start_coordinate()) \
                                 and not is_it_number_of_field(text.text):
                             temp_list.append(text)
-                    temp_list = sorted(temp_list, key=lambda x: x.vector.x)
+                    temp_list = sorted(temp_list, key=lambda x: x.vector.get_x1())
                     if len(temp_list) > 0:
                         fields.append("".join(x.text + "  " for x in temp_list))
 
                 previous_page = page
 
-        previous_field = None
-        for field in fields:  # repeat for the last operation
-            if is_it_new_item(field, r"(?:^|(?: |^)[оО])(?: +|^)\d{1,2}\.? "):
-                # in case first element of list
-                if previous_field is None:
-                    previous_field = field
-                    continue
-                #
-                s = __split_shift_field(previous_field)
-                try:
-                    self.operations[previous_page.number_of_operation].shifts.append(s)
-                except KeyError:
-                    self.operations[previous_page.number_of_operation] = Operation(
-                        (previous_page.number_of_operation, previous_page.name_of_operation, ""))
-                    logging.warning(
-                        f"In file {self.file_name} operation #{previous_page.number_of_operation} not found in MK")
-                    operation = self.operations[previous_page.number_of_operation]
-                    operation.IOT = previous_page.IOT
-                    operation.ammo = previous_page.ammo
-                    self.operations[previous_page.number_of_operation].shifts.append(s)
-                previous_field = field
-            elif previous_field is not None:
-                previous_field += " " + field
-            else:
-                unresolved += field
+        __fields_data_getter(unresolved)
 
-        s = __split_shift_field(previous_field)
-        self.operations[previous_page.number_of_operation].shifts.append(s)  # in case final element of list
-
-        if unresolved != "":
-            self.unresolved_text.append(UnresolvedText(previous_page.number_of_operation, unresolved))
-
-        fields.clear()
 
 
 class Operation:
-    def __init__(self, nnt):
+    def __init__(self, nnt: tuple):
         self.number = nnt[0]
         self.description = nnt[1]
         self.tsekh = nnt[2]
-        self.ammo = None
-        self.IOT = None
+        self.ammo = ""
+        self.IOT = ""
         self.shifts = []
 
 
 class Shift:
-    def __init__(self, number, description, tools_list, percent):
+    def __init__(self, number: int, description: str, tools_list: list, percent: str):
         self.number = number
         self.description = description
         self.tools = tools_list
@@ -226,14 +202,14 @@ class Shift:
 
 
 class Tool:
-    def __init__(self, name):
+    def __init__(self, name: str):
         self.name = name
-        self.standard = None
+        self.standard = ""
         self.quantity = None
-        self.um = None
+        self.um = ""
 
 
 class UnresolvedText:
-    def __init__(self, page, text):
+    def __init__(self, page: str, text: str):
         self.number_of_operation = page
         self.text = text

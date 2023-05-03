@@ -31,7 +31,7 @@ def get_process_flow(pages_list: list):
         for page in pages:
             if page.kind.lower() == "мк" and page.form == "2":
                 pf = ProcessFlow(marker=page.name_tech,
-                                 file_name=page.__file_name,
+                                 file_name=page.file_name,
                                  name=page.name,
                                  description=page.description,
                                  developer=page.developer,

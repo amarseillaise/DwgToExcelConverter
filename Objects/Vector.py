@@ -41,6 +41,7 @@ class Vector:
     def get_end_coordinate(self):
         return self.end_point[0], self.end_point[1]
 
+
 class VectorLine(Vector):
     def __init__(self, start_point: tuple, end_point: tuple, delta_x: float, delta_y: float):
         super().__init__(start_point, end_point)
