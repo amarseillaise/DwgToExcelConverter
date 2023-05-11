@@ -31,7 +31,8 @@ def get_data(file_name: str, dir_path: str):
                 #
 
                 line = Line(obj.split('||'), file_name)
-                data[0][key_coordinate] = line
+                if line.vertical is not None:
+                    data[0][key_coordinate] = line
 
             else:  # if text
                 data[1].append(DbText(obj.split("||")))

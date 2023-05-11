@@ -1,10 +1,12 @@
+import logging
+
 import Objects.Vector
 import math
 
 
 class Line:
     def __init__(self, points: list, file_name: str):
-        self.__border_side: str = ""
+        self.border_side: str = ""
         self.file_name = file_name
         self.vertical: bool
         
@@ -28,11 +30,19 @@ class Line:
                 self.vector.start_point = (self.vector.end_point[0], self.vector.start_point[1])
                 self.vector.end_point = (temp, self.vector.end_point[1])
         else:
-            raise Exception("Failed resolve kind of the line (vertical/horizontal)")
+            logging.warning(f"Failed resolve kind of the line (vertical/horizontal) on\n"
+                            f"{self.vector.get_start_coordinate()};\n"
+                            f"{self.vector.get_end_coordinate()}\n"
+                            f"in file {self.file_name}\n")
+            self = None
+            # raise Exception(f"Failed resolve kind of the line (vertical/horizontal) on\n"
+            #                 f"{self.vector.get_start_coordinate()};\n"
+            #                 f"{self.vector.get_end_coordinate()}\n"
+            #                 f"in file {self.file_name}")
 
     def get_border_side(self):
-        return self.__border_side
+        return self.border_side
 
 
     def set_border_side(self, value):
-        self.__border_side = value
+        self.border_side = value
