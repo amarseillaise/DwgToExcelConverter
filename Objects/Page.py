@@ -27,50 +27,49 @@ def detect_pages(dataset: list[{}, []]):
 
     while len(lines) != 0:
         for l in range(len(lines)):
+            current_line: Line = lines[l]
 
-            if poped_line.vertical and not lines[l].vertical:  # Case poped line is vertical
+            if poped_line.vertical and not current_line.vertical:  # Case poped line is vertical
 
                 if is_equal_coordinate(poped_line.vector.get_start_coordinate(),
-                                       lines[l].vector.get_start_coordinate(), 1e-4) or \
+                                       current_line.vector.get_start_coordinate(), 1e-4) or \
                         is_equal_coordinate(poped_line.vector.get_end_coordinate(),
-                                            lines[l].vector.get_start_coordinate(), 1e-4):
+                                            current_line.vector.get_start_coordinate(), 1e-4):
                     poped_line.set_border_side("left")
 
                 elif is_equal_coordinate(poped_line.vector.get_start_coordinate(),
-                                         lines[l].vector.get_end_coordinate(), 1e-4) or \
+                                         current_line.vector.get_end_coordinate(), 1e-4) or \
                         is_equal_coordinate(poped_line.vector.get_end_coordinate(),
-                                            lines[l].vector.get_end_coordinate(), 1e-4):
+                                            current_line.vector.get_end_coordinate(), 1e-4):
                     poped_line.set_border_side("right")
 
 
-            elif not poped_line.vertical and lines[l].vertical:  # Case poped line is horizontal
+            elif not poped_line.vertical and current_line.vertical:  # Case poped line is horizontal
 
                 if is_equal_coordinate(poped_line.vector.get_start_coordinate(),
-                                       lines[l].vector.get_start_coordinate(), 1e-4) or \
+                                       current_line.vector.get_start_coordinate(), 1e-4) or \
                         is_equal_coordinate(poped_line.vector.get_end_coordinate(),
-                                            lines[l].vector.get_start_coordinate(), 1e-4):
+                                            current_line.vector.get_start_coordinate(), 1e-4):
                     poped_line.set_border_side("down")
 
 
                 elif is_equal_coordinate(poped_line.vector.get_start_coordinate(),
-                                         lines[l].vector.get_end_coordinate(), 1e-4) or \
+                                         current_line.vector.get_end_coordinate(), 1e-4) or \
                         is_equal_coordinate(poped_line.vector.get_end_coordinate(),
-                                            lines[l].vector.get_end_coordinate(), 1e-4):
+                                            current_line.vector.get_end_coordinate(), 1e-4):
                     poped_line.set_border_side("up")
 
             if poped_line.get_border_side():
-                # if math.isclose(poped_line.vector.get_x1(), 176234, rel_tol=1e-4):
-                #     print(1)
                 iterations_count = 0
                 matches_border_sides[poped_line.get_border_side()] = poped_line
-                count_of_matched_lines += len([v for v in matches_border_sides.values() if v])
+                count_of_matched_lines += 1
                 poped_line = lines.pop(l)
                 if count_of_matched_lines == 3:  # Case last line iteration
                     # if math.isclose(poped_line.vector.get_x1(), 176234, rel_tol=1e-4):
                     #     print(1)
                     for matched_line in matches_border_sides.keys():
                         if not matches_border_sides.get(matched_line):
-                            matches_border_sides[matched_line] = poped_line
+                            matches_border_sides[matched_line] = current_line
                             matches_border_sides[matched_line].border_side = matched_line
 
                     if len(lines) != 0:
@@ -83,8 +82,8 @@ def detect_pages(dataset: list[{}, []]):
         iterations_count += 1
         if iterations_count == 3:
             logging.error(f"Incorrect Line in coordinate:\n"
-                          f"start point - ({poped_line.vector.get_start_coordinate()});\n"
-                          f"end point - ({poped_line.vector.get_end_coordinate()})\n"
+                          f"start point - ({poped_line.vector.x_start}; {poped_line.vector.y_start})\n"
+                          f"end point - ({poped_line.vector.x_end}; {poped_line.vector.y_end})\n"
                           f"in file {poped_line.file_name}\n")
             poped_line = lines.pop(0)
             [matches_border_sides.update({x: None}) for x in matches_border_sides.keys()]
