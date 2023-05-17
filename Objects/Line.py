@@ -1,5 +1,4 @@
 import logging
-
 import Objects.Vector
 import math
 
@@ -34,11 +33,7 @@ class Line:
                             f"{self.vector.get_start_coordinate()};\n"
                             f"{self.vector.get_end_coordinate()}\n"
                             f"in file {self.file_name}\n")
-            self = None
-            # raise Exception(f"Failed resolve kind of the line (vertical/horizontal) on\n"
-            #                 f"{self.vector.get_start_coordinate()};\n"
-            #                 f"{self.vector.get_end_coordinate()}\n"
-            #                 f"in file {self.file_name}")
+
 
     def get_border_side(self):
         return self.border_side

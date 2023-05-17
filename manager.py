@@ -21,6 +21,7 @@ def get_data_from_txt():
     pages_list: list = [detect_pages(x) for x in dataset_from_dwg_list]
     if len(pages_list) < 1:
         raise Exception("Failed resolve pages")
+    # [print(x.page_number) for x in pages_list[1]]
     return pages_list
 
 

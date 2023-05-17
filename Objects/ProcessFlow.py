@@ -145,7 +145,7 @@ class ProcessFlow:
         fields = []
         previous_page = pages[0]
         for page in pages:
-            if page.kind.lower() == "ок":
+            if page.kind.lower() == "ок" and page.number_of_operation:
                 if previous_page.page_number != pages[0].page_number \
                         and page.number_of_operation != previous_page.number_of_operation:
 
@@ -178,7 +178,8 @@ class ProcessFlow:
 
                 previous_page = page
 
-        __fields_data_getter(unresolved)
+        if page.kind.lower() == "ок" and page.number_of_operation:
+            __fields_data_getter(unresolved)
 
 
 

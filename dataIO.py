@@ -36,7 +36,9 @@ def get_data(file_name: str, dir_path: str):
 
             else:  # if text
                 data[1].append(DbText(obj.split("||")))
-    return data
+
+    return [sorted(list(data[0].values()), key=lambda k: (k.vector.get_y1(), k.vector.get_x1()), reverse=True),
+            sorted(data[1], key=lambda d: (d.vector.get_y1(), d.vector.get_x2()), reverse=True)]
 
 
 def write_pf_to_excel(pf_list: list):
@@ -93,6 +95,7 @@ def write_pf_to_excel(pf_list: list):
                                                        6: pf.approver,
                                                        8: pf.normalizator,
                                                        9: pf.liter,
+                                                       10: pf.file_name,
                                                        }
                           )
         act_row_pf_sheet += 1
@@ -103,6 +106,7 @@ def write_pf_to_excel(pf_list: list):
             insert_into_cells(unresolved_sheet, act_row_unresolved_sheet, {1: pf.marker,
                                                                            2: unresolved.number_of_operation,
                                                                            3: unresolved.text,
+                                                                           4: pf.file_name,
                                                                            }
                               )
             act_row_unresolved_sheet += 1
@@ -116,6 +120,7 @@ def write_pf_to_excel(pf_list: list):
                                                                           5: operation.ammo,
                                                                           7: operation.IOT,
                                                                           9: operation.tsekh,
+                                                                          10: pf.file_name,
                                                                           }
                               )
             act_row_operation_sheet += 1
@@ -128,6 +133,7 @@ def write_pf_to_excel(pf_list: list):
                                                                       3: shift.number,
                                                                       4: shift.description,
                                                                       5: shift.percent_control,
+                                                                      6: pf.file_name,
                                                                       }
                                   )
                 act_row_shift_sheet += 1
@@ -139,6 +145,7 @@ def write_pf_to_excel(pf_list: list):
                                                                        2: operation.number,
                                                                        3: shift.number,
                                                                        5: tool.name,
+                                                                       7: pf.file_name,
                                                                        }
                                       )
                     act_row_ammo_sheet += 1

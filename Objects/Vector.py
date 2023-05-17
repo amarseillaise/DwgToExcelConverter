@@ -1,9 +1,10 @@
 import math
 
 
+
 def is_equal_coordinate(first_coordinate: tuple, second_coordinate: tuple, accuracy: float):
-    for i in range(len(first_coordinate)):
-        if not math.isclose(first_coordinate[i], second_coordinate[i], rel_tol=accuracy):
+    for xy1, xy2 in zip(first_coordinate, second_coordinate):
+        if abs(xy1 - xy2) > accuracy:
             return False
     return True
 
