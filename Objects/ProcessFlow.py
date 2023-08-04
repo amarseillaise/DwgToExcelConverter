@@ -22,7 +22,7 @@ class ProcessFlow:
 
     def detect_operations(self, pages):
         def __split_operation_field(string):
-            m = re.search(r"\s[0123]\d\d\s", string)
+            m = re.search(r"(?:\s|^)[0123]\d\d\s", string)
 
             number = string[m.start():m.end()]
             description = string[m.end():]
@@ -31,12 +31,15 @@ class ProcessFlow:
         
         
         #  detect operations dataset in fields via vector's coordinate
+
         fields = []
         for page in pages:
             if page.kind.lower() == "мк":
                 for i in range(len(page.vector.fields_coordinate)):
                     temp_list = []
                     for text in page.content:
+                        if text.text == "Тарировка ключей.":
+                            print()
                         if is_in(page.vector.fields_coordinate[i], text.vector.get_start_coordinate()) \
                                 and not is_it_number_of_field(text.text):
                             temp_list.append(text)
@@ -44,11 +47,11 @@ class ProcessFlow:
                     if len(temp_list) > 0:
                         fields.append("".join(x.text + "  " for x in temp_list))
 
-        #  find operations via regexp r"\s[0123]\d\d\s"
+        #  find operations via regexp r"(?:\s|^)[0123]\d\d\s"
         unresolved = ""
         previous_field = None
         for field in fields:
-            if is_it_new_item(field, r"\s[0123]\d\d\s"):
+            if is_it_new_item(field, r"(?:\s|^)[0123]\d\d\s"):  # r"\s[0123]\d\d\s"
                 # in case first element of list
                 if not previous_field:
                     previous_field = field
@@ -89,13 +92,12 @@ class ProcessFlow:
                 iterating_string = string[start_end_positions[i][1] - 1:start_pos_of_next_kind]
                 for tool in iterating_string.strip().split(";"):
                     if len(tool) > 2:
-                        tools.append(Tool(tool.strip()))
+                        tools.append(Tool(tool.strip(), string[start_end_positions[i][0]:start_end_positions[i][1] - 1].strip()))
             #
 
             # trying to detect control percent
             percent_match = re.search(r"\d{1,3} *%", string)
-            percent = string[percent_match.start():percent_match.end()].replace(" ",
-                                                                                "") if percent_match is not None else None
+            percent = string[percent_match.start():percent_match.end()].replace(" ", "") if percent_match else None
             #
 
             number = string[s.start():s.end()]
@@ -199,15 +201,15 @@ class Shift:
         self.description = description
         self.tools = tools_list
         self.percent_control = percent
-        pass
 
 
 class Tool:
-    def __init__(self, name: str):
+    def __init__(self, name: str, kind: str):
         self.name = name
         self.standard = ""
         self.quantity = None
         self.um = ""
+        self.kind = kind
 
 
 class UnresolvedText:

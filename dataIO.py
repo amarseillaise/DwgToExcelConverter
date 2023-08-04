@@ -145,7 +145,8 @@ def write_pf_to_excel(pf_list: list):
                                                                        2: operation.number,
                                                                        3: shift.number,
                                                                        5: tool.name,
-                                                                       7: pf.file_name,
+                                                                       6: tool.kind,
+                                                                       8: pf.file_name,
                                                                        }
                                       )
                     act_row_ammo_sheet += 1
