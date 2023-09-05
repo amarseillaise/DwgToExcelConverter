@@ -75,7 +75,7 @@ class ProcessFlow:
 
 
         def __split_shift_field(string):
-            s = re.search(r"(?:^|(?: |^)[оО])(?: +|^)\d{1,2}\.? ", string)
+            s = re.search(r"(?:^|(?: |^)[оО0])(?: +|^)[1-9]{1,2}\.? ", string)
 
             # trying to detect tools
             tools = []
@@ -110,7 +110,7 @@ class ProcessFlow:
         def __fields_data_getter(unresolved=""):
             previous_field = None
             for field in fields:
-                if is_it_new_item(field, r"(?:^|(?: |^)[оО])(?: +|^)\d{1,2}\.? "):
+                if is_it_new_item(field, r"(?:^|(?: |^)[оО0])(?: +|^)[1-9]{1,2}\.? "):
                     # in case first element of list
                     if not previous_field:
                         previous_field = field

@@ -41,7 +41,7 @@ def get_process_flow(pages_list: list):
                                  normalizator=page.normalizator,
                                  liter=page.liter)
         if not pf:
-            raise Exception(f"MK page is not defined in file {pages[0].__file_name}")
+            raise Exception(f"MK page is not defined in file {pages[0].file_name}")
         pf.detect_operations(pages)
         pf.detect_shifts(pages)
         pf_list.append(pf)

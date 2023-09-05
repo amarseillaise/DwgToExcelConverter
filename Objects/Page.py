@@ -256,14 +256,14 @@ class Page:  # I should make a child classes
                          (text.vector.get_x1(), text.vector.get_y1())):
                     self.ammo = text.text
 
-            elif self.kind.lower() == "ок" and self.form.lower() in ("1а", "2а"):  # additionally for "OK 2a"
+            elif str(self.kind).lower() == "ок" and str(self.form).lower() in ("1а", "2а"):  # additionally for "OK 2a"
                 if is_in((self.vector.get_x2() - 20.000, self.vector.get_y2() - 44.2500,  # number_of_operation
                           self.vector.get_x2() - 5.500, self.vector.get_y2() - 31.500),
                          (text.vector.get_x1(), text.vector.get_y1())):
                     self.number_of_operation = text.text.strip()
 
             # ОК2
-            elif self.kind.lower() == "ок" and self.form.lower() == "2":
+            elif str(self.kind).lower() == "ок" and str(self.form).lower() == "2":
 
                 if is_in((self.vector.get_x2() - 20.000, self.vector.get_y2() - 52.7500,  # number_of_operation
                           self.vector.get_x2() - 5.500, self.vector.get_y2() - 44.2500),
